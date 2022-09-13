@@ -1,0 +1,4 @@
+#!/bin/bash -ex
+
+logger "workshops::configure hook CALLED!"
+touch "$SNAP_COMMON/configure-hook-run"
