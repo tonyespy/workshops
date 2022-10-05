@@ -1,58 +1,121 @@
 name: workshops
 version: git
 summary: Workshops
-description: |
-  Workshops provides a user friendly interface to create and manage LXD containers as well as provides a full featured terminal.
+description: 'Workshops provides a user friendly interface to create and manage LXD
+    containers as well as provides a full featured terminal.
+
+    '
 confinement: strict
 base: core22
 grade: stable
 license: GPL-3.0+
 architectures:
-  - build-on: amd64
+-   build-on: amd64
     build-for: amd64
-  - build-on: arm64
+-   build-on: arm64
     build-for: arm64
 assumes:
-  - snapd2.46
-
+- snapd2.43
+- snapd2.46
 parts:
-  flutter-git:
-    source: https://github.com/flutter/flutter.git
-    source-branch: stable
-    plugin: nil
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/usr/bin
-      mkdir -p $CRAFT_PART_INSTALL/usr/libexec
-      cp -r $CRAFT_PART_SRC $CRAFT_PART_INSTALL/usr/libexec/flutter
-      ln -s $CRAFT_PART_INSTALL/usr/libexec/flutter/bin/flutter $CRAFT_PART_INSTALL/usr/bin/flutter
-    build-packages:
-      - clang
-      - cmake
-      - curl
-      - ninja-build
-      - unzip
-      - xz-utils
-      - zip
-    override-prime:
-      rm -r $CRAFT_PART_INSTALL
+    flutter-git:
+        source: https://github.com/flutter/flutter.git
+        source-branch: stable
+        plugin: nil
+        override-build: 'mkdir -p $CRAFT_PART_INSTALL/usr/bin
 
-  workshops:
-    after: [ flutter-git ]
-    plugin: nil
-    source: .
-    override-build: |
-      set -eux
-      flutter doctor
-      flutter pub get
-      flutter build linux --release -v
-      mkdir -p $CRAFT_PART_INSTALL/bin/
-      cp -r build/linux/*/release/bundle/* $CRAFT_PART_INSTALL/bin/
+            mkdir -p $CRAFT_PART_INSTALL/usr/libexec
+
+            cp -r $CRAFT_PART_SRC $CRAFT_PART_INSTALL/usr/libexec/flutter
+
+            ln -s $CRAFT_PART_INSTALL/usr/libexec/flutter/bin/flutter $CRAFT_PART_INSTALL/usr/bin/flutter
+
+            '
+        build-packages:
+        - clang
+        - cmake
+        - curl
+        - ninja-build
+        - unzip
+        - xz-utils
+        - zip
+        override-prime: rm -r $CRAFT_PART_INSTALL
+        build-environment: &id001
+        -   PATH: /snap/gnome-42-2204-sdk/current/usr/bin${PATH:+:$PATH}
+        -   XDG_DATA_DIRS: $SNAPCRAFT_STAGE/usr/share:/snap/gnome-42-2204-sdk/current/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
+        -   LD_LIBRARY_PATH: /snap/gnome-42-2204-sdk/current/lib/$CRAFT_ARCH_TRIPLET:/snap/gnome-42-2204-sdk/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/gnome-42-2204-sdk/current/usr/lib:/snap/gnome-42-2204-sdk/current/usr/lib/vala-current:/snap/gnome-42-2204-sdk/current/usr/lib/$CRAFT_ARCH_TRIPLET/pulseaudio${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+        -   PKG_CONFIG_PATH: /snap/gnome-42-2204-sdk/current/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig:/snap/gnome-42-2204-sdk/current/usr/lib/pkgconfig:/snap/gnome-42-2204-sdk/current/usr/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+        -   GETTEXTDATADIRS: /snap/gnome-42-2204-sdk/current/usr/share/gettext-current${GETTEXTDATADIRS:+:$GETTEXTDATADIRS}
+        -   GDK_PIXBUF_MODULE_FILE: /snap/gnome-42-2204-sdk/current/usr/lib/$CRAFT_ARCH_TRIPLET/gdk-pixbuf-current/loaders.cache
+        -   ACLOCAL_PATH: /snap/gnome-42-2204-sdk/current/usr/share/aclocal${ACLOCAL_PATH:+:$ACLOCAL_PATH}
+        -   PYTHONPATH: /snap/gnome-42-2204-sdk/current/usr/lib/python3.10:/snap/gnome-42-2204-sdk/current/usr/lib/python3/dist-packages:/snap/gnome-42-2204-sdk/current/usr/lib/$CRAFT_ARCH_TRIPLET/gobject-introspection${PYTHONPATH:+:$PYTHONPATH}
+    workshops:
+        after:
+        - flutter-git
+        plugin: nil
+        source: .
+        override-build: 'set -eux
+
+            flutter doctor
+
+            flutter pub get
+
+            flutter build linux --release -v
+
+            mkdir -p $CRAFT_PART_INSTALL/bin/
+
+            cp -r build/linux/*/release/bundle/* $CRAFT_PART_INSTALL/bin/
+
+            '
+        build-environment: *id001
+    gnomesdk:
+        source: ../gnomesdk
+        plugin: make
 
 apps:
-  workshops:
-    command: bin/workshops
-    desktop: bin/data/flutter_assets/assets/workshops.desktop
-    extensions: [gnome]
-    plugs:
-      - lxd
-      - network
+    workshops:
+        command: bin/workshops
+        desktop: bin/data/flutter_assets/assets/workshops.desktop
+        plugs:
+        - desktop
+        - desktop-legacy
+        - gsettings
+        - opengl
+        - wayland
+        - x11
+        - lxd
+        - network
+
+plugs:
+    desktop:
+        mount-host-font-cache: false
+    gtk-3-themes:
+        interface: content
+        target: $SNAP/data-dir/themes
+        default-provider: gtk-common-themes
+    icon-themes:
+        interface: content
+        target: $SNAP/data-dir/icons
+        default-provider: gtk-common-themes
+    sound-themes:
+        interface: content
+        target: $SNAP/data-dir/sounds
+        default-provider: gtk-common-themes
+    gnome-42-2204:
+        interface: content
+        target: $SNAP/gnome-platform
+        default-provider: gnome-42-2204
+environment:
+    SNAP_DESKTOP_RUNTIME: $SNAP/gnome-platform
+    GTK_USE_PORTAL: '1'
+hooks:
+    configure:
+        plugs:
+        - desktop
+        command-chain:
+        - snap/command-chain/hooks-configure-fonts
+layout:
+    /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0:
+        bind: $SNAP/gnome-platform/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0
+    /usr/share/xml/iso-codes:
+        bind: $SNAP/gnome-platform/usr/share/xml/iso-codes
