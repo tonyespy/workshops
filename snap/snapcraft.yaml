@@ -17,14 +17,14 @@ assumes:
 
 parts:
   flutter-git:
-    source: https://github.com/flutter/flutter.git
-    source-branch: stable
+    source: https://github.com/sony/flutter-elinux.git
+    source-tag: 3.7.1
     plugin: nil
     override-build: |
       mkdir -p $CRAFT_PART_INSTALL/usr/bin
       mkdir -p $CRAFT_PART_INSTALL/usr/libexec
-      cp -r $CRAFT_PART_SRC $CRAFT_PART_INSTALL/usr/libexec/flutter
-      ln -s $CRAFT_PART_INSTALL/usr/libexec/flutter/bin/flutter $CRAFT_PART_INSTALL/usr/bin/flutter
+      cp -r $CRAFT_PART_SRC $CRAFT_PART_INSTALL/usr/libexec/flutter-elinux
+      ln -s $CRAFT_PART_INSTALL/usr/libexec/flutter-elinux/bin/flutter-elinux $CRAFT_PART_INSTALL/usr/bin/flutter-elinux
     build-packages:
       - clang
       - cmake
@@ -42,16 +42,15 @@ parts:
     source: .
     override-build: |
       set -eux
-      flutter doctor
-      flutter pub get
-      flutter build linux --release -v
+      flutter-elinux create .
+      flutter-elinux pub get
+      flutter-elinux build linux --release --suppress-analytics
       mkdir -p $CRAFT_PART_INSTALL/bin/
       cp -r build/linux/*/release/bundle/* $CRAFT_PART_INSTALL/bin/
 
 apps:
   workshops:
     command: bin/workshops
-    desktop: bin/data/flutter_assets/assets/workshops.desktop
     extensions: [gnome]
     plugs:
       - lxd
