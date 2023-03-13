@@ -33,6 +33,10 @@ parts:
       - unzip
       - xz-utils
       - zip
+    override-stage: |
+      craftctl default
+      #flutter-elinux doctor
+      flutter-elinux precache
     prime:
       - -*
 
@@ -41,7 +45,7 @@ parts:
     plugin: nil
     source: .
     override-build: |
-      set -eux
+      set -ux
       flutter-elinux create .
       flutter-elinux pub get
       flutter-elinux build linux --release --suppress-analytics
